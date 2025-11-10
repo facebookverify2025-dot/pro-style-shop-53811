@@ -16,6 +16,7 @@ interface Product {
   stock_quantity: number;
   status: string;
   currency: string;
+  discount: number;
 }
 
 const Products = () => {
@@ -93,6 +94,8 @@ const Products = () => {
                 image={product.images && product.images[0] ? product.images[0] : 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800'}
                 sizes={product.sizes || []}
                 inStock={product.stock_quantity > 0}
+                stockQuantity={product.stock_quantity}
+                discount={product.discount || 0}
               />
             ))
           ) : (

@@ -1,44 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Heart, Minus, Plus, ChevronLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-// بيانات تجريبية
-const productData = {
-  id: '1',
-  name: 'تيشيرت قطني فاخر - أسود',
-  price: 149,
-  description: 'تيشيرت قطني عالي الجودة مصنوع من أجود أنواع القطن المصري. مريح وعملي للاستخدام اليومي. قصة عصرية تناسب جميع الأذواق.',
-  images: [
-    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800',
-    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800',
-    'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=800',
-  ],
-  sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-  colors: [
-    { name: 'أسود', hex: '#000000' },
-    { name: 'أبيض', hex: '#FFFFFF' },
-    { name: 'رمادي', hex: '#6B7280' },
-  ],
-  inStock: true,
-  category: 'رجالي',
-};
+interface Product {
+  id: string;
+  name_ar: string;
+  description_ar: string;
+  price: number;
+  currency: string;
+  images: string[];
+  sizes: string[];
+  colors: string[];
+  stock_quantity: number;
+  category: string;
+  discount: number;
+}
 
 const ProductDetails = () => {
   const { id } = useParams();
   const { addItem } = useCart();
   const { toast } = useToast();
   
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState(productData.colors[0]);
+  const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
 
+  useEffect(() => {
+    fetchProduct();
+  }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setProduct(data);
+      if (data.colors && data.colors.length > 0) {
+        setSelectedColor(data.colors[0]);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'خطأ',
+        description: 'فشل في تحميل المنتج',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (!product) return;
+
+    if (!selectedSize && product.sizes && product.sizes.length > 0) {
       toast({
         title: 'تنبيه',
         description: 'الرجاء اختيار المقاس',
@@ -47,15 +73,19 @@ const ProductDetails = () => {
       return;
     }
 
+    const finalPrice = product.discount 
+      ? product.price - (product.price * product.discount / 100) 
+      : product.price;
+
     addItem({
       id: '',
-      productId: productData.id,
-      name: productData.name,
-      price: productData.price,
+      productId: product.id,
+      name: product.name_ar,
+      price: finalPrice,
       size: selectedSize,
-      color: selectedColor.name,
+      color: selectedColor,
       quantity,
-      image: productData.images[0],
+      image: product.images[0],
     });
 
     toast({
@@ -63,6 +93,33 @@ const ProductDetails = () => {
       description: 'تم إضافة المنتج إلى سلة التسوق',
     });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>جاري التحميل...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl mb-4">المنتج غير موجود</p>
+          <Button asChild>
+            <Link to="/products">العودة للمنتجات</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const finalPrice = product.discount 
+    ? product.price - (product.price * product.discount / 100) 
+    : product.price;
+
+  const inStock = product.stock_quantity > 0;
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -73,7 +130,7 @@ const ProductDetails = () => {
           <ChevronLeft className="w-4 h-4 rotate-180" />
           <Link to="/products" className="hover:text-primary">المنتجات</Link>
           <ChevronLeft className="w-4 h-4 rotate-180" />
-          <span className="text-foreground">{productData.name}</span>
+          <span className="text-foreground">{product.name_ar}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -81,81 +138,107 @@ const ProductDetails = () => {
           <div className="space-y-4">
             <div className="aspect-square rounded-lg overflow-hidden bg-muted">
               <img 
-                src={productData.images[selectedImage]} 
-                alt={productData.name}
+                src={product.images[selectedImage] || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800'} 
+                alt={product.name_ar}
                 className="w-full h-full object-cover"
               />
             </div>
             
-            <div className="grid grid-cols-4 gap-4">
-              {productData.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(idx)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === idx ? 'border-primary' : 'border-transparent'
-                  }`}
-                >
-                  <img src={img} alt={`${productData.name} ${idx + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {product.images.length > 1 && (
+              <div className="grid grid-cols-4 gap-4">
+                {product.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImage === idx ? 'border-primary' : 'border-transparent'
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name_ar} ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <Badge className="mb-3">{productData.category}</Badge>
-              <h1 className="text-3xl font-bold mb-3">{productData.name}</h1>
-              <div className="text-3xl font-bold text-primary mb-4">
-                {productData.price} ر.س
+              <Badge className="mb-3">{product.category}</Badge>
+              <h1 className="text-3xl font-bold mb-3">{product.name_ar}</h1>
+              <div className="flex items-center gap-3 mb-4">
+                {product.discount > 0 ? (
+                  <>
+                    <div className="text-3xl font-bold text-primary">
+                      {finalPrice.toFixed(2)} {product.currency}
+                    </div>
+                    <div className="text-xl text-muted-foreground line-through">
+                      {product.price} {product.currency}
+                    </div>
+                    <Badge variant="destructive">
+                      خصم {product.discount}%
+                    </Badge>
+                  </>
+                ) : (
+                  <div className="text-3xl font-bold text-primary">
+                    {product.price} {product.currency}
+                  </div>
+                )}
               </div>
+              <p className="text-sm text-muted-foreground">
+                متبقي: {product.stock_quantity} قطعة
+              </p>
             </div>
 
-            <div className="prose prose-sm">
-              <p className="text-muted-foreground">{productData.description}</p>
-            </div>
+            {product.description_ar && (
+              <div className="prose prose-sm">
+                <p className="text-muted-foreground">{product.description_ar}</p>
+              </div>
+            )}
 
             {/* Colors */}
-            <div>
-              <h3 className="font-semibold mb-3">اللون</h3>
-              <div className="flex gap-3">
-                {productData.colors.map((color) => (
-                  <button
-                    key={color.name}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-12 h-12 rounded-full border-2 transition-all ${
-                      selectedColor.name === color.name 
-                        ? 'border-primary ring-2 ring-primary ring-offset-2' 
-                        : 'border-border'
-                    }`}
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                  />
-                ))}
+            {product.colors && product.colors.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3">اللون</h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.colors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-4 py-2 rounded-lg border-2 font-medium transition-all ${
+                        selectedColor === color
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border hover:border-primary'
+                      }`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">{selectedColor.name}</p>
-            </div>
+            )}
 
             {/* Sizes */}
-            <div>
-              <h3 className="font-semibold mb-3">المقاس</h3>
-              <div className="flex flex-wrap gap-3">
-                {productData.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-6 py-3 rounded-lg border-2 font-medium transition-all ${
-                      selectedSize === size
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border hover:border-primary'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {product.sizes && product.sizes.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3">المقاس</h3>
+                <div className="flex flex-wrap gap-3">
+                  {product.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-6 py-3 rounded-lg border-2 font-medium transition-all ${
+                        selectedSize === size
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border hover:border-primary'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quantity */}
             <div>
@@ -172,7 +255,8 @@ const ProductDetails = () => {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                  disabled={quantity >= product.stock_quantity}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -185,7 +269,7 @@ const ProductDetails = () => {
                 size="lg" 
                 className="flex-1"
                 onClick={handleAddToCart}
-                disabled={!productData.inStock}
+                disabled={!inStock}
               >
                 <ShoppingCart className="w-5 h-5 ml-2" />
                 أضف إلى السلة
@@ -195,7 +279,7 @@ const ProductDetails = () => {
               </Button>
             </div>
 
-            {!productData.inStock && (
+            {!inStock && (
               <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
                 <p className="text-destructive font-medium">هذا المنتج غير متوفر حالياً</p>
               </div>

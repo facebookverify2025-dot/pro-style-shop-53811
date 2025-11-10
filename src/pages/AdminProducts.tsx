@@ -24,6 +24,7 @@ interface Product {
   sizes: string[];
   colors: string[];
   status: string;
+  discount: number;
 }
 
 const AdminProducts = () => {
@@ -43,6 +44,7 @@ const AdminProducts = () => {
     sizes: "",
     colors: "",
     status: "active",
+    discount: "" as string | number,
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -169,6 +171,7 @@ const AdminProducts = () => {
         sizes: formData.sizes ? formData.sizes.split(',').map(s => s.trim()) : [],
         colors: formData.colors ? formData.colors.split(',').map(c => c.trim()) : [],
         status: formData.status,
+        discount: Number(formData.discount) || 0,
       };
 
       if (editingProduct) {
@@ -213,6 +216,7 @@ const AdminProducts = () => {
       sizes: (product.sizes || []).join(', '),
       colors: (product.colors || []).join(', '),
       status: product.status,
+      discount: product.discount || 0,
     });
     setIsDialogOpen(true);
   };
@@ -252,6 +256,7 @@ const AdminProducts = () => {
       sizes: "",
       colors: "",
       status: "active",
+      discount: "",
     });
   };
 
@@ -410,6 +415,18 @@ const AdminProducts = () => {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="discount">الخصم (%)</Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.discount}
+                    onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="status">الحالة</Label>
                   <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                     <SelectTrigger>
@@ -452,6 +469,9 @@ const AdminProducts = () => {
                   )}
                   <div className="space-y-1 text-sm">
                     <p><strong>السعر:</strong> {product.price} {product.currency}</p>
+                    {product.discount > 0 && (
+                      <p><strong>الخصم:</strong> {product.discount}%</p>
+                    )}
                     <p><strong>التصنيف:</strong> {product.category}</p>
                     <p><strong>الكمية:</strong> {product.stock_quantity}</p>
                     <p><strong>الحالة:</strong> {product.status === 'active' ? 'نشط' : 'غير نشط'}</p>

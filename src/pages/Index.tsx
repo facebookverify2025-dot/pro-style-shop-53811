@@ -15,6 +15,7 @@ interface Product {
   stock_quantity: number;
   status: string;
   currency: string;
+  discount: number;
 }
 
 const Index = () => {
@@ -60,7 +61,7 @@ const Index = () => {
       <section className="bg-hero py-20 px-4">
         <div className="container mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in">
-            مرحباً بك في <span className="text-primary">متجر Pro</span>
+            مرحباً بك في <span className="text-primary">متجر برو</span>
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 animate-fade-in">
             أفضل الأزياء العصرية بأسعار مناسبة
@@ -140,6 +141,8 @@ const Index = () => {
                   image={product.images && product.images[0] ? product.images[0] : 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800'}
                   sizes={product.sizes || []}
                   inStock={product.stock_quantity > 0}
+                  stockQuantity={product.stock_quantity}
+                  discount={product.discount || 0}
                 />
               ))
             ) : (

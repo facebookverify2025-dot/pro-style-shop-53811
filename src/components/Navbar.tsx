@@ -16,8 +16,9 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="text-2xl font-bold text-primary">
-              متجر <span className="text-accent">Pro</span>
+            <div className="text-xl font-bold text-primary leading-tight">
+              متجر برو<br/>
+              <span className="text-xs text-accent">من شركة أركان للتجارة</span>
             </div>
           </Link>
 

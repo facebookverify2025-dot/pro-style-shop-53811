@@ -15,6 +15,7 @@ interface Product {
   colors: string[];
   stock_quantity: number;
   currency: string;
+  discount: number;
 }
 
 const categoryNames: Record<string, string> = {
@@ -134,6 +135,8 @@ const CategoryProducts = () => {
                 image={product.images?.[0] || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800'}
                 sizes={product.sizes || []}
                 inStock={product.stock_quantity > 0}
+                stockQuantity={product.stock_quantity}
+                discount={product.discount || 0}
               />
             ))}
           </div>

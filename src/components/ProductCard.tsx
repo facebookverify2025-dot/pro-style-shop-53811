@@ -13,9 +13,10 @@ interface ProductCardProps {
   inStock: boolean;
   isNew?: boolean;
   discount?: number;
+  stockQuantity?: number;
 }
 
-const ProductCard = ({ id, name, price, image, sizes, inStock, isNew, discount }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, image, sizes, inStock, isNew, discount, stockQuantity }: ProductCardProps) => {
   const finalPrice = discount ? price - (price * discount / 100) : price;
 
   return (
@@ -78,15 +79,22 @@ const ProductCard = ({ id, name, price, image, sizes, inStock, isNew, discount }
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1 mb-3">
-          {sizes.slice(0, 5).map(size => (
-            <span 
-              key={size}
-              className="px-2 py-1 text-xs bg-muted rounded"
-            >
-              {size}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap gap-1">
+            {sizes.slice(0, 3).map(size => (
+              <span 
+                key={size}
+                className="px-2 py-1 text-xs bg-muted rounded"
+              >
+                {size}
+              </span>
+            ))}
+          </div>
+          {stockQuantity !== undefined && (
+            <span className="text-xs text-muted-foreground">
+              متبقي: {stockQuantity}
             </span>
-          ))}
+          )}
         </div>
 
         <Button 
