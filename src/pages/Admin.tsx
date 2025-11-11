@@ -144,7 +144,7 @@ const Admin = () => {
 
         {/* Management Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => window.location.href = '/admin/products'}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/products')}>
             <CardHeader>
               <CardTitle>إدارة المنتجات</CardTitle>
             </CardHeader>
@@ -153,7 +153,7 @@ const Admin = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => window.location.href = '/admin/orders'}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/orders')}>
             <CardHeader>
               <CardTitle>إدارة الطلبات</CardTitle>
             </CardHeader>
@@ -162,7 +162,7 @@ const Admin = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => window.location.href = '/admin/settings'}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/settings')}>
             <CardHeader>
               <CardTitle>الإعدادات</CardTitle>
             </CardHeader>
