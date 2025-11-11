@@ -30,10 +30,27 @@ const AdminSettings = () => {
     checkAuth();
   }, []);
 
-  const checkAuth = () => {
-    const isAdmin = localStorage.getItem("isAdmin");
-    if (isAdmin !== "true") {
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate("/admin/login");
+      return;
+    }
+
+    // التحقق من صلاحيات الإدارة
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .eq('role', 'admin');
+
+    if (!roles || roles.length === 0) {
+      toast({
+        title: "غير مصرح",
+        description: "ليس لديك صلاحيات الإدارة",
+        variant: "destructive",
+      });
+      navigate('/');
       return;
     }
 

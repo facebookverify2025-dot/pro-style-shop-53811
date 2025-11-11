@@ -5,9 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseClient } from "@/lib/supabase-helpers";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const checkoutSchema = z.object({
+  name: z.string().trim().min(1, "الاسم مطلوب").max(100, "الاسم يجب أن يكون أقل من 100 حرف"),
+  phone: z.string().trim().min(10, "رقم الهاتف يجب أن يكون 10 أرقام على الأقل").max(20, "رقم الهاتف طويل جداً"),
+  email: z.string().trim().email("البريد الإلكتروني غير صحيح").max(255).optional().or(z.literal("")),
+  city: z.string().trim().min(1, "المدينة مطلوبة").max(100, "اسم المدينة طويل جداً"),
+  address: z.string().trim().min(1, "العنوان مطلوب").max(500, "العنوان طويل جداً"),
+  notes: z.string().max(1000, "الملاحظات طويلة جداً").optional(),
+});
 
 const Checkout = () => {
   const { items, total, clearCart } = useCart();
@@ -28,8 +37,16 @@ const Checkout = () => {
     setLoading(true);
 
     try {
+      // Validate form data
+      const validationResult = checkoutSchema.safeParse(formData);
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        throw new Error(firstError.message);
+      }
+
+      const validatedData = validationResult.data;
       const orderNumber = `ORD-${Date.now()}`;
-      const { data: settings } = await supabaseClient.from("admin_settings").select("*").eq("id", 1).maybeSingle();
+      const { data: settings } = await supabase.from("admin_settings").select("*").eq("id", 1).maybeSingle();
       
       const settingsData = settings as any;
       const shippingFee = settingsData?.shipping_fee ?? 0;
@@ -37,20 +54,24 @@ const Checkout = () => {
       
       const orderData = {
         order_number: orderNumber,
-        customer_name: formData.name,
-        customer_phone: formData.phone,
-        customer_email: formData.email,
+        customer_name: validatedData.name,
+        customer_phone: validatedData.phone,
+        customer_email: validatedData.email || null,
         items: items,
         subtotal: total,
         shipping_fee: shippingFee,
         total: total + shippingFee,
         currency: currency,
-        shipping_address: { city: formData.city, address: formData.address, notes: formData.notes },
+        shipping_address: { 
+          city: validatedData.city, 
+          address: validatedData.address, 
+          notes: validatedData.notes || "" 
+        },
         status: "new",
-        notes: formData.notes,
+        notes: validatedData.notes || null,
       };
 
-      const { error } = await supabaseClient.from("orders").insert([orderData] as any);
+      const { error } = await supabase.from("orders").insert([orderData] as any);
       if (error) throw error;
 
       await supabase.functions.invoke("send-telegram-notification", { body: orderData });

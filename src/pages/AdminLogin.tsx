@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-
-const ADMIN_PASSWORD = "darkstorm";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -16,10 +16,22 @@ const AdminLogin = () => {
 
   useEffect(() => {
     // التحقق من وجود جلسة نشطة
-    const isAdmin = localStorage.getItem("isAdmin");
-    if (isAdmin === "true") {
-      navigate("/admin");
-    }
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // التحقق من صلاحيات الإدارة
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'admin');
+
+        if (roles && roles.length > 0) {
+          navigate("/admin");
+        }
+      }
+    };
+    checkSession();
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -27,15 +39,31 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      if (password === ADMIN_PASSWORD) {
-        localStorage.setItem("isAdmin", "true");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        // التحقق من صلاحيات الإدارة
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .eq('role', 'admin');
+
+        if (!roles || roles.length === 0) {
+          await supabase.auth.signOut();
+          throw new Error("ليس لديك صلاحيات الإدارة");
+        }
+
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في لوحة التحكم",
         });
         navigate("/admin");
-      } else {
-        throw new Error("كلمة المرور غير صحيحة");
       }
     } catch (error: any) {
       toast({
@@ -60,6 +88,19 @@ const AdminLogin = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="email">البريد الإلكتروني</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                dir="ltr"
+                placeholder="admin@example.com"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="password">كلمة المرور</Label>
               <Input
                 id="password"
@@ -69,7 +110,6 @@ const AdminLogin = () => {
                 required
                 dir="ltr"
                 placeholder="••••••••"
-                autoFocus
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
