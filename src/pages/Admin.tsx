@@ -22,27 +22,10 @@ const Admin = () => {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+  const checkAuth = () => {
+    const isAdmin = localStorage.getItem("isAdmin");
+    if (isAdmin !== "true") {
       navigate('/admin/login');
-      return;
-    }
-
-    // التحقق من صلاحيات الإدارة
-    const { data: roles } = await (supabase as any)
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .eq('role', 'admin');
-
-    if (!roles || roles.length === 0) {
-      toast({
-        title: "غير مصرح",
-        description: "ليس لديك صلاحيات الإدارة",
-        variant: "destructive",
-      });
-      navigate('/');
       return;
     }
 
@@ -81,8 +64,8 @@ const Admin = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem("isAdmin");
     navigate('/admin/login');
   };
 
