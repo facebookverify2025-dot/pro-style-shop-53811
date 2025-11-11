@@ -32,15 +32,25 @@ const WelcomeMessage = () => {
             مرحباً بك في متجر برو
           </h2>
           <p className="text-2xl font-semibold text-foreground">
-            من شركة أركان للتجارة
+            من مجموعة النواوي جروب
           </p>
-          <div className="bg-card/60 backdrop-blur-sm rounded-xl p-6 border border-border">
-            <p className="text-lg text-muted-foreground mb-2">
-              في المبيعات
-            </p>
-            <p className="text-xl font-bold text-foreground">
-              مدير مجلس الإدارة: زياد رشاد
-            </p>
+          <div className="bg-card/60 backdrop-blur-sm rounded-xl p-6 border border-border space-y-4">
+            <div>
+              <p className="text-lg text-muted-foreground mb-1">
+                المدير التنفيذي
+              </p>
+              <p className="text-xl font-bold text-foreground">
+                زياد رشاد
+              </p>
+            </div>
+            <div>
+              <p className="text-lg text-muted-foreground mb-1">
+                رئيس مجلس الإدارة
+              </p>
+              <p className="text-xl font-bold text-foreground">
+                محمد صلاح كمال
+              </p>
+            </div>
           </div>
           <Button 
             size="lg" 

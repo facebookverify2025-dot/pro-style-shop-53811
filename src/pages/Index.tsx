@@ -64,7 +64,7 @@ const Index = () => {
             مرحباً بك في <span className="text-primary">متجر برو</span>
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 animate-fade-in">
-            أفضل الأزياء العصرية بأسعار مناسبة
+            من مجموعة النواوي جروب - أفضل الأزياء العصرية بأسعار مناسبة
           </p>
           <div className="flex gap-4 justify-center animate-slide-up">
             <Button size="lg" asChild>
